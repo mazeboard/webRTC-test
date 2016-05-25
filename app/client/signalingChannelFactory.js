@@ -1,4 +1,4 @@
-function SignalingChannel(id){
+function SignalingChannel(){
 
     var _ws;
     var self = this;
@@ -12,7 +12,7 @@ function SignalingChannel(id){
     }
 
     function _onConnectionEstablished(){
-        _sendMessage('init', id);
+        _sendMessage('init'); // not necessary, server will send an id on connection
     }
 
     function _onClose(){
@@ -23,25 +23,28 @@ function SignalingChannel(id){
         console.error("error:", err);
     }
 
-
     function _onMessage(evt){
         var objMessage = JSON.parse(evt.data);
         switch (objMessage.type) {
-            case "ICECandidate":
-                self.onICECandidate(objMessage.ICECandidate, objMessage.source);
-                break;
-            case "offer":
-                self.onOffer(objMessage.offer, objMessage.source);
-                break;
-            case "answer":
-                self.onAnswer(objMessage.answer, objMessage.source);
-                break;
-            default:
-                throw new Error("invalid message type");
+        case "ICECandidate":
+            self.onICECandidate(objMessage.ICECandidate, objMessage.source);
+            break;
+	case "id":
+	    self.id=objMessage.id;
+	    self.peers=objMessage.peers;
+	    break;
+        case "offer":
+            self.onOffer(objMessage.offer, objMessage.source);
+            break;
+        case "answer":
+            self.onAnswer(objMessage.answer, objMessage.source);
+            break;
+        default:
+            throw new Error("invalid message type");
         }
     }
 
-    function _sendMessage(type, data, destination){
+    function _sendMessage(type, data, destination) {
         var message = {};
         message.type = type;
         message[type] = data;
@@ -83,8 +86,8 @@ function SignalingChannel(id){
     };
 }
 
-window.createSignalingChannel = function(url, id){
-    var signalingChannel = new SignalingChannel(id);
+window.createSignalingChannel = function(url){
+    var signalingChannel = new SignalingChannel();
     signalingChannel.connectToTracker(url);
     return signalingChannel;
 };

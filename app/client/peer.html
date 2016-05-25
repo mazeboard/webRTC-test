@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Peer page</title>
+    <script src="signalingChannelFactory.js"></script>
+    <script src="peer.js"></script>
+    <script language="javascript" type="text/javascript">
+        var channels={}, signalingChannel;
+        window.addEventListener("load", function() {
+          signalingChannel=initPeer(function(message, peerId) { // received message from peerId
+             var received = document.getElementById('received');
+             received.innerHTML += '<b>From: '+peerId+'</b> Message: '+message+'<br>';
+             }, function (channel, peerId) { // received channel from peerId
+                  channels[peerId]=channel;
+	          channels[peerId].selected=false;
+	          var peers=document.getElementById('peers');
+	          peers.innerHTML += "<il id='_"+peerId+"' style='font-size:16px;margin:1em' onclick='selectPeer.call(this,"+peerId+")'>"+peerId+"</il>";
+           });
+          document.getElementById("send").onclick = function() {
+             var message = document.getElementById('message').value;
+             Object.keys(channels).forEach(function (peerId) {
+	       if (channels[peerId].selected && channels[peerId].readyState=="open") {
+                   channels[peerId].send(message);
+	       } else {
+	            console.log('peerId:'+peerId+' readyState:'+channels[peerId].readyState);
+ 	         if (channels[peerId].readyState=="closed") {
+  	            delete channels[peerId];
+	            document.getElementById("_"+peerId).remove();
+	         }
+	      }
+	    })
+          }
+	  document.getElementById("send").disabled=true;
+	  enable();
+	});
+	function selectPeer(peerId) {
+	  var c=channels[peerId];
+	  c.selected=!c.selected;
+	  if (c.selected) this.style["font-weight"]="bold";
+	  else this.style["font-weight"]="normal";
+	}
+	function enable () {
+	  if (signalingChannel.id!=undefined) {
+             document.getElementById("peer").innerHTML="Peer page (id="+signalingChannel.id+")";
+	     document.getElementById("send").disabled=false;
+	  } else setTimeout(enable,4);
+	}
+    </script>
+</head>
+<body>
+    <h2 id="peer">Peer page</h2>
+    <div>Peers:<ul id="peers"><il></il></ul></div>
+    <textarea id="message" style="display:block"></textarea>
+    <button id="send">Send message</button>
+    <pre id="received"></pre>
+</body>
+</html>
